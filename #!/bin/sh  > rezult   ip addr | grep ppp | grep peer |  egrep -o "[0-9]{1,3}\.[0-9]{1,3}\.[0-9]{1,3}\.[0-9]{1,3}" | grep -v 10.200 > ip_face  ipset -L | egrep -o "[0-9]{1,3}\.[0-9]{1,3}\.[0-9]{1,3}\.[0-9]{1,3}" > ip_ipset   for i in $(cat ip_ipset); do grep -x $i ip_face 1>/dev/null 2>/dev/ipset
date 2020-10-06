@@ -1,0 +1,11 @@
+#!/bin/sh
+
+> rezult
+
+
+ip addr | grep ppp | grep peer |  egrep -o "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" | grep -v 10.200 > ip_face
+
+ipset -L | egrep -o "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" > ip_ipset
+
+
+for i in $(cat ip_ipset); do grep -x $i ip_face 1>/dev/null 2>/dev/null || ipset del forwd $i ; done
