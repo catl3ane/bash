@@ -1,0 +1,70 @@
+#!/bin/bash
+cd /etc/scripts/gpon_script && /etc/scripts/gpon_script/gen_olts_configs > /dev/null 2>&1
+cp gpon* /etc/nagios3/objects/
+rm /etc/nagios3/objects/gpon.list
+sleep 5
+
+cd /etc/scripts/smartax_epon_script && /etc/scripts/smartax_epon_script/_sct_epon.sh > /dev/null 2>&1
+cd /etc/scripts/smartax_epon_script && cp olt32epon.cfg /etc/nagios3/objects/
+cd /etc/scripts/smartax_epon_script && cp olt33epon.cfg /etc/nagios3/objects/
+cd /etc/scripts/smartax_epon_script && cp olt34epon.cfg /etc/nagios3/objects/
+cd /etc/scripts/smartax_epon_script && cp olt35epon.cfg /etc/nagios3/objects/
+cd /etc/scripts/smartax_epon_script && cp olt36epon.cfg /etc/nagios3/objects/
+cd /etc/scripts/smartax_epon_script && cp olt37epon.cfg /etc/nagios3/objects/
+cd /etc/scripts/smartax_epon_script && cp olt38epon.cfg /etc/nagios3/objects/
+cd /etc/scripts/smartax_epon_script && cp olt39epon.cfg /etc/nagios3/objects/
+
+sleep 5
+
+
+snmpwalk -v 2c -c public 10.30.25.70 .1.3.6.1.4.1.17409.2.3.4.1.1.7 > tmpmac
+snmpwalk -v 2c -c public 10.30.25.70 .1.3.6.1.4.1.17409.2.3.4.1.1.8 > tmpstate
+snmpwalk -v 2c -c public 10.30.25.70 .1.3.6.1.4.1.17409.2.3.4.1.1.1 | awk '{print$1}' |cut -c 33- > tmpid
+
+cat tmpmac | cut -d ":" -f2  | sed "s/^ //;s/ *$//;s/ //g" | sed -e 's/[0-9A-F]\{4\}/&./g' -e 's/.$//' -e 's/\(.*\)/\L\1/' | sed s/'\s'//g > tmpmacdone
+cat tmpstate | cut -c 33-  >  tmpstatedone
+
+paste tmpstatedone tmpmacdone | awk '{print "service_description "$0}' > tmpservicendone
+paste tmpid tmpservicendone > tmpidmac
+
+cat tmpstate | cut -c 32- | awk '{print "check_command check_snmp!-C public -P 2c -o .1.3.6.1.4.1.17409.2.3.4.1.1.8"$0}'| awk '{print $0"   -r 1"}' | sed 's/= INTEGER: 1/ /' | sed 's/= INTEGER: 2/ /' > tmpcheckdone
+
+rm olt38epon.cfg
+cat tmpid |  while read output
+do
+echo "define service{" >>  olt38epon.cfg
+echo "        use generic-service" >> olt38epon.cfg
+echo "        host_name    OLT38-Michurina_2_Beleckovka" >> olt38epon.cfg
+cat tmpidmac |grep -w $output |awk '{print$2" "$3" "$7}' >> olt38epon.cfg
+cat tmpcheckdone |grep -w $output >> olt38epon.cfg
+echo "        }" >> olt38epon.cfg
+echo "########################################################################################" >> olt38epon.cfg
+done
+
+rm tmp*
+
+snmpwalk -v 2c -c public 10.30.17.77 .1.3.6.1.4.1.17409.2.3.4.1.1.7 > tmpmac
+snmpwalk -v 2c -c public 10.30.17.77 .1.3.6.1.4.1.17409.2.3.4.1.1.8 > tmpstate
+snmpwalk -v 2c -c public 10.30.17.77 .1.3.6.1.4.1.17409.2.3.4.1.1.1 | awk '{print$1}' |cut -c 33- > tmpid
+
+cat tmpmac | cut -d ":" -f2  | sed "s/^ //;s/ *$//;s/ //g" | sed -e 's/[0-9A-F]\{4\}/&./g' -e 's/.$//' -e 's/\(.*\)/\L\1/' | sed s/'\s'//g > tmpmacdone
+cat tmpstate | cut -c 33-  >  tmpstatedone
+
+paste tmpstatedone tmpmacdone | awk '{print "service_description "$0}' > tmpservicendone
+paste tmpid tmpservicendone > tmpidmac
+
+cat tmpstate | cut -c 32- | awk '{print "check_command check_snmp!-C public -P 2c -o .1.3.6.1.4.1.17409.2.3.4.1.1.8"$0}'| awk '{print $0"   -r 1"}' | sed 's/= INTEGER: 1/ /' | sed 's/= INTEGER: 2/ /' >  tmpcheckdone
+
+rm olt39epon.cfg
+cat tmpid |  while read output
+do
+echo "define service{" >>  olt39epon.cfg
+echo "        use generic-service" >> olt39epon.cfg
+echo "        host_name    OLT39_DmitrovkaPionerskaya44_Dmitrovka-Kijashki-Potoki-Podluzhnoe-Soloncy" >> olt39epon.cfg
+cat tmpidmac |grep -w $output |awk '{print$2" "$3" "$7}' >> olt39epon.cfg
+cat tmpcheckdone |grep -w $output >> olt39epon.cfg
+echo "        }" >> olt39epon.cfg
+echo "########################################################################################" >> olt39epon.cfg
+done
+
+rm tmp*
